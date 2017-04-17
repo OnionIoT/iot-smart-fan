@@ -1,0 +1,6 @@
+{
+    "tempMax" : "40",
+    "tempMin" : "18",
+    "dutyMin" : "60",
+    "dutyMax" : "100"
+}

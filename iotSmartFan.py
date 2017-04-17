@@ -1,51 +1,65 @@
-
-import time
+import os
+import sys
+import json
 import oneWire
 from temperatureSensor import TemperatureSensor
 from omegaMotors import hBridgeMotor
 
-# setup PWM Expansion Channels connected to H-Bridge IC
+# mark the PWM Expansion Channels connected to H-Bridge IC
+# change these if you use different pins!
 H_BRIDGE_1A_CHANNEL = 0
 H_BRIDGE_2A_CHANNEL = 1
 H_BRIDGE_12EN_CHANNEL = 2
 
-# instantiate gpio objects for our switch inputs
-directionGPIO = onionGpio.OnionGpio(0)
-speed1GPIO = onionGpio.OnionGpio(1)
-speed2GPIO = onionGpio.OnionGpio(2)
-
-oneWireGpio = 1 # set the sensor GPIO
+oneWireGpio = 1 # mark the sensor GPIO
 
 tempMax = 40
 tempMin = 18
-dutyDelta = 0
+
+dutyMax = 100
+dutyMin = 60
+dutyStep = 0
 
 def calcFanSpeed (temp):
+
+    # restricting the temperature within the operating range.
     if (temp > tempMax):
         temp = tempMax
     if (temp < tempMin):
         temp = tempMin
-    #FINISH
+
+    tempDelta = temp - tempMin
+
+
+    duty = dutyMin + (dutyStep * float(tempDelta))
+
+    return duty
 
 
 
-def fillLookupTable ():
+def loadConfig ():
     dirName = os.path.dirname(os.path.abspath(__file__))
     with open( '/'.join([dirName, 'config.json']) ) as f:
     	config = json.load(f)
+    return config
 
-    dutyDelta = config['dutyMin'] - config['dutyMax']
-    #FINISH
 
 if __name__ == '__main__':
+    conf = loadConfig()
 
-    conf = loadConfig
+    dutyMin = float(conf['dutyMin'])
+    dutyMax = float(conf['dutyMax'])
 
-    #FINISH
+    tempMin = float(conf['tempMin'])
+    tempMax = float(conf['tempMax'])
+
+    dutyStep = (dutyMax - dutyMin)/(tempMax - tempMin )
 
     if not oneWire.setupOneWire(str(oneWireGpio)):
         print "Kernel module could not be inserted. Please reboot and try again."
-        return -1
+
+    # setup the motor
+    motor = hBridgeMotor(H_BRIDGE_12EN_CHANNEL, H_BRIDGE_1A_CHANNEL, H_BRIDGE_2A_CHANNEL)
 
     # get the address of the temperature sensor
     sensorAddress = oneWire.scanOneAddress()
@@ -54,7 +68,12 @@ if __name__ == '__main__':
     sensor = TemperatureSensor("oneWire", { "address": sensorAddress, "gpio": oneWireGpio })
     if not sensor.ready:
         print "Sensor was not set up correctly. Please make sure that your sensor is firmly connected to the GPIO specified above and try again."
-        return -1
+        sys.exit(0)
+    else:
+        # read temp value
+        temp = sensor.readValue()
+        # get the corresponding duty
+        duty = calcFanSpeed(temp)
+        # give 'er!
+        motor.spinForward(duty)
 
-    # Read value code
-    value = sensor.readValue()
