@@ -3,7 +3,7 @@ import sys
 import json
 import oneWire
 from temperatureSensor import TemperatureSensor
-from omegaMotors import hBridgeMotor
+from omegaMotors import OmegaPwm, hBridgeMotor
 
 # mark the PWM Expansion Channels connected to H-Bridge IC
 # change these if you use different pins!
@@ -26,7 +26,7 @@ def calcFanSpeed (temp):
     if (temp > tempMax):
         temp = tempMax
     if (temp < tempMin):
-        temp = tempMin
+        return 0
 
     tempDelta = temp - tempMin
 
@@ -58,15 +58,18 @@ if __name__ == '__main__':
     if not oneWire.setupOneWire(str(oneWireGpio)):
         print "Kernel module could not be inserted. Please reboot and try again."
 
-    # setup the motor
+    # setup the motor, use OmegaPwm instead of hBridgeMotor if you're using a case fan!
     motor = hBridgeMotor(H_BRIDGE_12EN_CHANNEL, H_BRIDGE_1A_CHANNEL, H_BRIDGE_2A_CHANNEL)
 
-    # get the address of the temperature sensor
+    # SENSOR SETUP BEGIN
     sensorAddress = oneWire.scanOneAddress()
 
 	# instantiate the temperature sensor object
     sensor = TemperatureSensor("oneWire", { "address": sensorAddress, "gpio": oneWireGpio })
-    if not sensor.ready:
+    success = sensor.ready
+    # SENSOR SETUP END
+
+    if not success:
         print "Sensor was not set up correctly. Please make sure that your sensor is firmly connected to the GPIO specified above and try again."
         sys.exit(0)
     else:
