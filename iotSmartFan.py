@@ -12,11 +12,11 @@ FAN_PWM_CHANNEL = 0
 
 oneWireGpio = 3 # mark the sensor GPIO
 
-tempMax = 40
-tempMin = 18
+tempMax = 0
+tempMin = 0
 
-dutyMax = 100
-dutyMin = 60
+dutyMax = 0
+dutyMin = 0
 dutyStep = 0
 
 
@@ -59,13 +59,15 @@ if __name__ == '__main__':
         print "Kernel module could not be inserted. Please reboot and try again."
 
 
-    # SENSOR SETUP BEGIN
+    #~~~ SENSOR SETUP BEGIN
+
     sensorAddress = oneWire.scanOneAddress()
 
 	# instantiate the temperature sensor object
     sensor = TemperatureSensor("oneWire", { "address": sensorAddress, "gpio": oneWireGpio })
     success = sensor.ready
-    # SENSOR SETUP END
+
+    #~~~ SENSOR SETUP END
 
     if not success:
         print "Sensor was not set up correctly. Please make sure that your sensor is firmly connected to the GPIO specified above and try again."
