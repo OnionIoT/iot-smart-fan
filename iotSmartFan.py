@@ -5,13 +5,12 @@ import oneWire
 from temperatureSensor import TemperatureSensor
 from omegaMotors import OmegaPwm, hBridgeMotor
 
-# mark the PWM Expansion Channels connected to H-Bridge IC
-# change these if you use different pins!
-H_BRIDGE_1A_CHANNEL = 0
-H_BRIDGE_2A_CHANNEL = 1
-H_BRIDGE_12EN_CHANNEL = 2
+# PWM channels for case fan, plus additional channels for H-bridge operation
+H_BRIDGE_1A_CHANNEL = 1
+H_BRIDGE_2A_CHANNEL = 2
+FAN_PWM_CHANNEL = 0
 
-oneWireGpio = 1 # mark the sensor GPIO
+oneWireGpio = 3 # mark the sensor GPIO
 
 tempMax = 40
 tempMin = 18
@@ -19,6 +18,7 @@ tempMin = 18
 dutyMax = 100
 dutyMin = 60
 dutyStep = 0
+
 
 def calcFanSpeed (temp):
 
@@ -37,29 +37,27 @@ def calcFanSpeed (temp):
 
 
 
-def loadConfig ():
-    dirName = os.path.dirname(os.path.abspath(__file__))
-    with open( '/'.join([dirName, 'config.json']) ) as f:
-    	config = json.load(f)
-    return config
-
 
 if __name__ == '__main__':
-    conf = loadConfig()
+    dirName = os.path.dirname(os.path.abspath(__file__))
+    with open( '/'.join([dirName, 'config.json']) ) as f:
+        config = json.load(f)
 
-    dutyMin = float(conf['dutyMin'])
-    dutyMax = float(conf['dutyMax'])
+    dutyMin = float(config['dutyMin'])
+    dutyMax = float(config['dutyMax'])
 
-    tempMin = float(conf['tempMin'])
-    tempMax = float(conf['tempMax'])
+    tempMin = float(config['tempMin'])
+    tempMax = float(config['tempMax'])
 
     dutyStep = (dutyMax - dutyMin)/(tempMax - tempMin )
+
+    fan = OmegaPwm(FAN_PWM_CHANNEL)
+    fan._setFrequency(15)
+
 
     if not oneWire.setupOneWire(str(oneWireGpio)):
         print "Kernel module could not be inserted. Please reboot and try again."
 
-    # setup the motor, use OmegaPwm instead of hBridgeMotor if you're using a case fan!
-    motor = hBridgeMotor(H_BRIDGE_12EN_CHANNEL, H_BRIDGE_1A_CHANNEL, H_BRIDGE_2A_CHANNEL)
 
     # SENSOR SETUP BEGIN
     sensorAddress = oneWire.scanOneAddress()
@@ -78,5 +76,5 @@ if __name__ == '__main__':
         # get the corresponding duty
         duty = calcFanSpeed(temp)
         # give 'er!
-        motor.spinForward(duty)
+        fan.setDutyCycle(duty)
 
