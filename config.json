@@ -3,5 +3,6 @@
     "tempMin" : "18",
     "dutyMin" : "60",
     "dutyMax" : "100",
-	"fanType" : "case"
+    "frequency" : "1000",
+    "fanType" : "case"
 }
