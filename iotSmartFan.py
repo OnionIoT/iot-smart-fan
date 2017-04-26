@@ -52,7 +52,7 @@ if __name__ == '__main__':
     dutyStep = (dutyMax - dutyMin)/(tempMax - tempMin )
 
     fan = OmegaPwm(FAN_PWM_CHANNEL)
-    fan._setFrequency(15)
+    fan._setFrequency(config['frequency'])
 
 
     if not oneWire.setupOneWire(str(oneWireGpio)):
